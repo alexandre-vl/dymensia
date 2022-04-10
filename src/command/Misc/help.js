@@ -19,10 +19,10 @@ module.exports = {
           \`!help dons\`
           \`!help utils\`
           `,
-          color: "a200ff",
+          color: client.config.globalColor,
           thumbnail: { url: message.guild.iconURL() },
           footer: {
-            text: "Dymensia ・ Made with ❤️ by Ayumi",
+            text: "Dymensia ・ Made with ❤️",
             icon_url: client.user.displayAvatarURL(),
           },
         },

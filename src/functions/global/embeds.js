@@ -1,4 +1,4 @@
-function embedError(error) {
+function missingArgs() {
   let embed = {
     embeds: [
       {
@@ -7,8 +7,19 @@ function embedError(error) {
       },
     ],
   };
-
-  return;
+  return embed;
 }
 
-modules.export.embedError = embedError;
+function unknownCommand() {
+  let embed = {
+    embeds: [
+      {
+        description: "`❌` Ooops ! Cette commande n'existe pas...",
+        color: "C23E3E",
+      },
+    ],
+  };
+  return embed;
+}
+
+module.exports.missingArgs = missingArgs;
