@@ -9,9 +9,12 @@ module.exports = async (client) => {
         file.forEach((f) => {
           const props = require(`${__dirname}/../../command/${dir}/${f}`);
           client.commandes.set(props.name, props);
-          props.aliases.forEach((alias) => {
-            client.aliases.set(alias, props.name);
-          });
+          if (props.aliases) {
+            props.aliases.forEach((alias) => {
+              client.aliases.set(alias, props.name);
+            });
+          } 
+          
         });
 
         client.logger.loader(

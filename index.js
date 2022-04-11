@@ -24,7 +24,7 @@ client.color = require("./src/utils/color.js");
 client.config = require("./config");
 
 // LOAD THE 4 HANDLERS
-["error", "command", "slashCommands", "event"].forEach((file) => {
+["error", "command", "event"].forEach((file) => {
   require(`./src/utils/handlers/${file}`)(client);
 });
 

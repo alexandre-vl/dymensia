@@ -1,89 +1,116 @@
 const db = require("quick.db");
-const { MessageActionRow, MessageButton, Interaction } = require("discord.js");
-const User = require("../createUser.js");
+const { MessageActionRow, MessageButton } = require("discord.js");
+const User = require("../global/User.js");
+const Squad = require("../global/Squad.js");
+const embeds = require("../global/embeds.js")
 
-module.exports = (client, message, args, name) => {
-  let squadName = args[0];
+module.exports = (client, message, args) => {
+    let squadName = args[0];
 
-  if (!db.get("squads")) db.set("squads", []);
-  if (!db.get("users")) db.set("users", []);
+    if (!db.get("squads")) db.set("squads", []);
+    if (!db.get("users")) db.set("users", []);
 
-  const row = new MessageActionRow().addComponents(
-    new MessageButton()
-      .setCustomId("accept")
-      .setLabel("✅")
-      .setStyle("SUCCESS"),
-    new MessageButton().setCustomId("decline").setLabel("❌").setStyle("DANGER")
-  );
 
-  message.channel
-    .send({
-      embeds: [
-        {
-          author: { name: "📌 Création escouade" },
-          description: `Voulez-vous vraiment créer l'escouade \`${squadName}\``,
-          color: client.config.globalcolor,
-          footer: {
-            text: "Dymensia ・ Made with ❤️",
-            icon_url: message.guild.iconURL,
-          },
-        },
-      ],
+    if (!User.get(message.author.id)) db.push('users', new User(message.author.id).json)
 
-      components: [row],
-    })
-    .then((m) => {
-      const filter = (i) => {
-        return (
-          ["accept", "decline"].includes(i.customId) &&
-          i.user.id === message.author.id &&
-          i.message.id === m.id
-        );
-      };
-      const collector = message.channel.createMessageComponentCollector({
-        filter,
-        time: 15000,
-        max: 1,
-      });
+    if (User.get(message.author.id).squad !== null) {
+        return message.channel.send(embeds.alreadySquad())
+    }
 
-      collector.on("collect", async (i) => {
-        switch (i.customId) {
-          case "accept":
-            let id = require("../global/randomId.js")(6, "squads");
-            db.push("squads", {
-              name: squadName,
-              id: id,
-              leader: message.author.id,
-              members: [],
-              coalition: "none",
-              xp: 0,
-              level: 0,
-              money: 0,
-              taxes: 0,
-              public: false,
-            });
-            let users = db.get("users");
-            let user = users.find((u) => u.id === message.author.id);
-            if (user) {
-              user.squad = id;
-            } else {
-              db.set("users", new User(message.author.id, id));
-            }
+    const row = new MessageActionRow().addComponents(
+        new MessageButton()
+        .setCustomId("accept")
+        .setLabel("✅")
+        .setStyle("SUCCESS"),
+        new MessageButton().setCustomId("decline").setLabel("❌").setStyle("DANGER")
+    );
 
-            i.reply({
-              ephemeral: true,
-              content: "🎉 Bravo ! Vous venez de créer votre escouade !",
+    message.channel
+        .send({
+            embeds: [{
+                author: { name: "📌 Création escouade" },
+                description: `Voulez-vous vraiment créer l'escouade \`${squadName}\``,
+                color: client.config.globalcolor,
+                footer: {
+                    text: "Dymensia ・ Made with ❤️",
+                    icon_url: message.guild.iconURL,
+                },
+            }, ],
+
+            components: [row],
+        })
+        .then((m) => {
+            const filter = (i) => {
+                return (
+                    ["accept", "decline"].includes(i.customId) &&
+                    i.user.id === message.author.id &&
+                    i.message.id === m.id
+                );
+            };
+            const collector = message.channel.createMessageComponentCollector({
+                filter,
+                time: 15000,
+                max: 1,
+                errors: ['time']
             });
 
-            console.log(db.get("squads"));
-            break;
-          case "decline":
-            i.reply({
-              ephemeral: true,
-              content: "❌ Vous venez d'annuler la création de votre escouade.",
+            collector.on("collect", async(i) => {
+                switch (i.customId) {
+                    case "accept":
+                        let squad = new Squad(squadName).setLeader(message.author.id).json
+                        db.push('squads', squad)
+                        
+                        let users = db.get("users");
+                        let user = User.get(message.author.id)
+                        user.squad = squad.id;
+                        users.splice(users.indexOf(users.find(u => u.id == user.id)), 1, user)
+                        db.set("users", users)
+
+                        m.edit({
+                            embeds: [{
+                                author: { name: "✅ Création escouade" },
+                                description: `L'escouade \`${squadName}\` a bien été créé.`,
+                                color: client.config.globalcolor,
+                                footer: {
+                                    text: "Dymensia ・ Made with ❤️",
+                                    icon_url: message.guild.iconURL,
+                                },
+                            }],
+                            components: [],
+                        });
+                        i.deferUpdate()
+                        break;
+                    case "decline":
+                        m.edit({
+                            embeds: [{
+                                author: { name: "❌ Création escouade" },
+                                description: `Vous avez décliné la création de l'escouade.`,
+                                color: client.config.globalcolor,
+                                footer: {
+                                    text: "Dymensia ・ Made with ❤️",
+                                    icon_url: message.guild.iconURL,
+                                },
+                            }],
+                            components: [],
+                        });
+                        i.deferUpdate()
+                        break;
+                }
             });
-            break;
-        }
-      });
-    });
+            collector.on('end', (i, reason) => {
+                if (reason == 'limit') return
+                m.edit({
+                    embeds: [{
+                        author: { name: "❌ Création escouade" },
+                        description: `Vous avez décliné la création de l'escouade.`,
+                        color: client.config.globalcolor,
+                        footer: {
+                            text: "Dymensia ・ Made with ❤️",
+                            icon_url: message.guild.iconURL,
+                        },
+                    }],
+                    components: [],
+                });
+            })
+        });
 };

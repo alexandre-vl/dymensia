@@ -8,6 +8,4 @@ module.exports = async (client) => {
   client.user.setActivity(`${prefix}help | github.com/meliooff`, {
     type: "PLAYING",
   });
-
-  require("../../slash.js");
 };

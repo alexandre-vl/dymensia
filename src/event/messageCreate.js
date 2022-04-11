@@ -1,5 +1,5 @@
 const { Collection } = require("discord.js");
-
+const embeds = require("../../functions/global/embeds.js");
 module.exports = async (client, message) => {
   if (message.author.bot) {
     return;
@@ -8,7 +8,7 @@ module.exports = async (client, message) => {
 
   if (message.content.match(new RegExp(`^<@!?${client.user.id}>( |)$`))) {
     return message.channel.send(
-      `Hi, I'm ${client.user.username}! In this server, my prefix is \`${prefix}\``
+      `Hey, mon prefix est \`${prefix}\``
     );
   }
   if (!message.content.startsWith(prefix)) {
@@ -24,7 +24,7 @@ module.exports = async (client, message) => {
 
   if (client.commandes.has(command)) {
     cmd = client.commandes.get(command);
-  } else if (client.aliases.has(command)) {
+  } else if (client.aliases?.has(command)) {
     cmd = client.commandes.get(client.aliases.get(command));
   }
   if (!cmd) return;
@@ -43,11 +43,7 @@ module.exports = async (client, message) => {
     const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
     if (now < expirationTime) {
       const timeLeft = (expirationTime - now) / 1000;
-      return message.reply(
-        `Wait ${timeLeft.toFixed(1)} more second${
-          timeLeft.toFixed(1) < 2 ? "" : "s"
-        } to use **${props.name}**`
-      );
+      return message.reply(embeds.cooldowns(timeLeft.toFixed(1)));
     }
   }
   timestamps.set(message.author.id, now);

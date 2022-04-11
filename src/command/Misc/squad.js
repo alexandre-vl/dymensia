@@ -5,7 +5,7 @@ module.exports = {
   description: "Squad command",
   aliases: ["s"],
   dir: "Misc",
-  cooldown: 2,
+  cooldown: 7,
   methods: ["create", "delete"],
 
   run: async (client, message, args) => {
