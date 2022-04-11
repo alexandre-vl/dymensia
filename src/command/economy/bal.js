@@ -1,4 +1,5 @@
 const embeds = require("../../functions/global/embeds.js");
+const us
 const db = require('quick.db')
 
 module.exports = {
@@ -8,7 +9,28 @@ module.exports = {
   cooldown: 7,
 
   run: async (client, message, args) => {
-    if(!args[0]) return embeds.missingArgs()
-    
+
+    if (!db.get("users")) db.set("users", []);
+    if (!User.get(message.author.id)) db.push('users', new User(message.author.id).json)
+
+    if(!args[0]) {
+
+        message.channel.send({
+          embeds: [{
+              author: { name: "💲 Balance" },
+              description: `Vous possédez \`${coin} Dymensia Coin\``,
+              color: client.config.globalcolor,
+              footer: {
+                  text: "Dymensia ・ Made with ❤️",
+                  icon_url: message.guild.iconURL,
+              },
+          }, ],
+
+          components: [row],
+      })
+    }
+    else{
+
+    }
   },
 };
