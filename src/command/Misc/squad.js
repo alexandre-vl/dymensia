@@ -17,6 +17,7 @@ module.exports = {
     "leave",
     "kick",
     "list",
+    "top",
   ],
 
   run: async (client, message, args) => {

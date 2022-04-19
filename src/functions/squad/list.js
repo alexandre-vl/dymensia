@@ -47,6 +47,9 @@ module.exports = async (client, message, args) => {
       footer: { text: squad.id },
     };
   });
+  console.log(embeds);
+  if (args == "public") embeds = embeds.filter((s) => s.title.includes("🟢"));
+
   timeout = 120000;
   let page = 0;
 
