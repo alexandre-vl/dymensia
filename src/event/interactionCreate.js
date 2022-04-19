@@ -63,6 +63,7 @@ module.exports = async (client, interaction) => {
         "`squad join <name/id>` ➜ Rejoindre une escouade public",
         "`squad leave ` ➜ Permet de quitter son escouade",
         "`squad kick <membre>` ➜ Permet de kick un membre de son escouade",
+        "`squad list` ➜ Voir la liste des escouades",
         "`squad panel` ➜ Gère l'escouade à partir du panel",
       ],
       coalition: [],

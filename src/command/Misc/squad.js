@@ -16,6 +16,7 @@ module.exports = {
     "join",
     "leave",
     "kick",
+    "list",
   ],
 
   run: async (client, message, args) => {
