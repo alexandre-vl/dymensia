@@ -11,23 +11,33 @@ module.exports = (client, message, args) => {
   if (!db.get("users")) db.set("users", []);
 
   if (!User.get(message.author.id))
-    db.push("users", new User(message.author.id).json);
-
-  if (
-    db
-      .get("squads")
-      .find((s) => s.members.find((m) => m.id == message.author.id))
-  ) {
-    return message.channel.send(
-      embeds.error("`❌` Vous avez déjà une escouade")
-    );
-  }
-
+    db.push("users", new User(message.author.id));
   if (!squadName) {
     return message.channel.send(
-      embeds.error("`❌` Veuillez préciser le nom de votre nouvelle escouade")
+      embeds.error("`❌` Veuillez préciser le nom de votre escouade")
     );
   }
+  if (
+    User.get(message.author.id).squad == null ||
+    !Squad.get(User.get(message.author.id).squad) ||
+    !Squad.get(User.get(message.author.id).squad).members.find(
+      (m) => m.id == message.author.id
+    )
+  )
+    return message.channel.send(
+      embeds.error("`❌` Vous n'avez pas encore d'escouade")
+    );
+
+    if (
+    !squad.roles
+      .find(
+        (r) => r.id == squad.members.find((m) => m.id == message.author.id).role
+      )
+      .permission.includes("MANAGE_SQUAD")
+  )
+    return message.channel.send(
+      embeds.error("`❌` Vous n'avez pas la permission requise pour faire ceci")
+    );
 
   const row = new MessageActionRow().addComponents(
     new MessageButton()
@@ -41,8 +51,10 @@ module.exports = (client, message, args) => {
     .send({
       embeds: [
         {
-          author: { name: "📌 Création escouade" },
-          description: `Voulez-vous vraiment créer l'escouade \`${squadName}\``,
+          author: { name: "📋 Renommage escouade" },
+          description: `Voulez-vous vraiment renommer l'escouade \`${
+            Squad.get(User.get(message.author.id).squad).name
+          }\` en \`${squadName}\``,
           color: client.config.globalColor,
           footer: {
             text: "Dymensia ・ Made with ❤️",
@@ -71,24 +83,23 @@ module.exports = (client, message, args) => {
       collector.on("collect", async (i) => {
         switch (i.customId) {
           case "accept":
-            let squad = new Squad(squadName).setLeader(message.author.id).json;
-            db.push("squads", squad);
-
-            let users = db.get("users");
             let user = User.get(message.author.id);
-            user.squad = squad.id;
-            users.splice(
-              users.indexOf(users.find((u) => u.id == user.id)),
+            let squads = db.get("squads");
+            let squad = Squad.get(user.squad);
+            squad.name = squadName;
+            squads.splice(
+              squads.indexOf(squads.find((squad) => squad.id == squad.id)),
               1,
-              user
+              squad
             );
-            db.set("users", users);
+            db.set("squads", squads);
+            console.log(db.get("squads"));
 
             m.edit({
               embeds: [
                 {
-                  author: { name: "✅ Création escouade" },
-                  description: `L'escouade \`${squadName}\` a bien été créé.`,
+                  author: { name: "✅ Renommage escouade" },
+                  description: `Votre escouade à été renommée en \`${squadName}\`.`,
                   color: client.config.globalColor,
                   footer: {
                     text: "Dymensia ・ Made with ❤️",
@@ -105,8 +116,8 @@ module.exports = (client, message, args) => {
             m.edit({
               embeds: [
                 {
-                  author: { name: "🚫 Création escouade" },
-                  description: `Vous avez décliné la création de l'escouade.`,
+                  author: { name: "🚫 Renommage escouade" },
+                  description: `Vous avez décliné la renommage de l'escouade.`,
                   color: client.config.globalcolor,
                   footer: {
                     text: "Dymensia ・ Made with ❤️",
@@ -125,7 +136,7 @@ module.exports = (client, message, args) => {
         m.edit({
           embeds: [
             {
-              author: { name: "🚫 Création escouade" },
+              author: { name: "❌ Création escouade" },
               description: `Vous avez décliné la création de l'escouade.`,
               color: client.config.globalcolor,
               footer: {

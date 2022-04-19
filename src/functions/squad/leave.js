@@ -1,33 +1,35 @@
-const db = require("quick.db");
-const { MessageActionRow, MessageButton } = require("discord.js");
-const User = require("../global/User.js");
 const Squad = require("../global/Squad.js");
+const User = require("../global/User.js");
+const db = require("quick.db");
 const embeds = require("../global/embeds.js");
-
+const { MessageActionRow, MessageButton } = require("discord.js");
 module.exports = (client, message, args) => {
-  let squadName = args;
-
   if (!db.get("squads")) db.set("squads", []);
   if (!db.get("users")) db.set("users", []);
 
   if (!User.get(message.author.id))
-    db.push("users", new User(message.author.id).json);
+    db.push("users", new User(message.author.id));
 
   if (
-    db
-      .get("squads")
-      .find((s) => s.members.find((m) => m.id == message.author.id))
-  ) {
+    User.get(message.author.id).squad == null ||
+    !Squad.get(User.get(message.author.id).squad) ||
+    !Squad.get(User.get(message.author.id).squad).members.find(
+      (m) => m.id == message.author.id
+    )
+  )
     return message.channel.send(
-      embeds.error("`❌` Vous avez déjà une escouade")
+      embeds.error("`❌` Vous n'avez pas encore d'escouade")
     );
-  }
 
-  if (!squadName) {
+  if (
+    Squad.get(User.get(message.author.id).squad) &&
+    Squad.get(User.get(message.author.id).squad).leader == message.author.id
+  )
     return message.channel.send(
-      embeds.error("`❌` Veuillez préciser le nom de votre nouvelle escouade")
+      embeds.error(
+        "`❌` Vous ne pouvez pas leave votre escouade en tant que leader!"
+      )
     );
-  }
 
   const row = new MessageActionRow().addComponents(
     new MessageButton()
@@ -36,13 +38,14 @@ module.exports = (client, message, args) => {
       .setStyle("SUCCESS"),
     new MessageButton().setCustomId("decline").setLabel("🚫").setStyle("DANGER")
   );
-
   message.channel
     .send({
       embeds: [
         {
-          author: { name: "📌 Création escouade" },
-          description: `Voulez-vous vraiment créer l'escouade \`${squadName}\``,
+          author: { name: "✈ Leave escouade" },
+          description: `Voulez-vous vraiment quitter l'escouade \`${
+            Squad.get(User.get(message.author.id).squad).name
+          }\``,
           color: client.config.globalColor,
           footer: {
             text: "Dymensia ・ Made with ❤️",
@@ -50,7 +53,6 @@ module.exports = (client, message, args) => {
           },
         },
       ],
-
       components: [row],
     })
     .then((m) => {
@@ -61,6 +63,7 @@ module.exports = (client, message, args) => {
           i.message.id === m.id
         );
       };
+
       const collector = message.channel.createMessageComponentCollector({
         filter,
         time: 15000,
@@ -71,24 +74,18 @@ module.exports = (client, message, args) => {
       collector.on("collect", async (i) => {
         switch (i.customId) {
           case "accept":
-            let squad = new Squad(squadName).setLeader(message.author.id).json;
-            db.push("squads", squad);
-
             let users = db.get("users");
+            let squads = db.get("squads");
             let user = User.get(message.author.id);
-            user.squad = squad.id;
-            users.splice(
-              users.indexOf(users.find((u) => u.id == user.id)),
-              1,
-              user
-            );
-            db.set("users", users);
+            let squad = Squad.get(user.squad);
 
             m.edit({
               embeds: [
                 {
-                  author: { name: "✅ Création escouade" },
-                  description: `L'escouade \`${squadName}\` a bien été créé.`,
+                  author: { name: "📌 Leave escouade" },
+                  description: `Vous venez de quitter l'escouade \`${
+                    Squad.get(User.get(message.author.id).squad).name
+                  }\``,
                   color: client.config.globalColor,
                   footer: {
                     text: "Dymensia ・ Made with ❤️",
@@ -98,16 +95,34 @@ module.exports = (client, message, args) => {
               ],
               components: [],
             });
-
+            user.squad = null;
+            users.splice(
+              users.indexOf(users.find((u) => u.id == user.id)),
+              1,
+              user
+            );
+            db.set("users", users);
+            squad.members.splice(
+              squad.members.indexOf(
+                squad.members.find((m) => m.id == message.author.id)
+              ),
+              1
+            );
+            squads.splice(
+              squads.indexOf(squads.find((u) => u.id == squad.id)),
+              1,
+              squad
+            );
+            db.set("squads", squads);
             i.deferUpdate();
             break;
           case "decline":
             m.edit({
               embeds: [
                 {
-                  author: { name: "🚫 Création escouade" },
-                  description: `Vous avez décliné la création de l'escouade.`,
-                  color: client.config.globalcolor,
+                  author: { name: "🚫 Leave escouade" },
+                  description: `Vous avez décliné le leave de l'escouade.`,
+                  color: client.config.globalColor,
                   footer: {
                     text: "Dymensia ・ Made with ❤️",
                     icon_url: message.guild.iconURL,
@@ -125,9 +140,9 @@ module.exports = (client, message, args) => {
         m.edit({
           embeds: [
             {
-              author: { name: "🚫 Création escouade" },
-              description: `Vous avez décliné la création de l'escouade.`,
-              color: client.config.globalcolor,
+              author: { name: "🚫 Leave escouade" },
+              description: `Vous avez décliné le leave de l'escouade.`,
+              color: client.config.globalColor,
               footer: {
                 text: "Dymensia ・ Made with ❤️",
                 icon_url: message.guild.iconURL,

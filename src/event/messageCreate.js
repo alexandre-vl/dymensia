@@ -1,5 +1,9 @@
 const { Collection } = require("discord.js");
-const embeds = require("../../functions/global/embeds.js");
+const embeds = require("../functions/global/embeds.js");
+const db = require("quick.db");
+const User = require("../functions/global/User.js");
+const Squad = require("../functions/global/Squad.js");
+const ranks = require("../data/ranks.json");
 module.exports = async (client, message) => {
   if (message.author.bot) {
     return;
@@ -7,11 +11,43 @@ module.exports = async (client, message) => {
   const prefix = client.config.prefix;
 
   if (message.content.match(new RegExp(`^<@!?${client.user.id}>( |)$`))) {
-    return message.channel.send(
-      `Hey, mon prefix est \`${prefix}\``
-    );
+    return message.channel.send(`Hey, mon prefix est \`${prefix}\``);
   }
+
   if (!message.content.startsWith(prefix)) {
+    function getRandomInt(max) {
+      return Math.floor(Math.random() * max + 1);
+    }
+
+    let user = User.get(message.author.id);
+    if (user) {
+      let users = db.get("users");
+      let gainXP = getRandomInt(9);
+      user.messages += 1;
+      user.xp += gainXP;
+      if (user.xp > ranks.users[user.level]) {
+        user.level += 1;
+      }
+      users.splice(users.indexOf(users.find((u) => u.id == user.id)), 1, user);
+      db.set("users", users);
+
+      let squad = Squad.get(user.squad);
+      if (squad) {
+        let squads = db.get("squads");
+
+        squad.messages += 1;
+        squad.xp += gainXP;
+        if (squad.xp > ranks.squads[squad.level]) {
+          squad.level += 1;
+        }
+        squads.splice(
+          squads.indexOf(squads.find((s) => s.id == squad.id)),
+          1,
+          squad
+        );
+        db.set("squads", squads);
+      }
+    }
     return;
   }
 
@@ -43,7 +79,11 @@ module.exports = async (client, message) => {
     const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
     if (now < expirationTime) {
       const timeLeft = (expirationTime - now) / 1000;
-      return message.reply(embeds.cooldowns(timeLeft.toFixed(1)));
+      return message.reply(
+        embeds.error(
+          `\`❌\` Molo ! Attends encore \`${timeLeft.toFixed(1)}\` seconde(s)`
+        )
+      );
     }
   }
   timestamps.set(message.author.id, now);

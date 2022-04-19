@@ -5,22 +5,33 @@ module.exports = {
   description: "Squad command",
   aliases: ["s"],
   dir: "Misc",
-  cooldown: 7,
-  methods: ["create", "delete"],
+  cooldown: 2,
+  methods: [
+    "create",
+    "delete",
+    "rename",
+    "info",
+    "invite",
+    "setrole",
+    "join",
+    "leave",
+    "kick",
+  ],
 
   run: async (client, message, args) => {
     let command = client.commandes.get("squad");
 
-    if (!args[0]) {
-      return message.channel.send(embeds.missingArgs());
-    }
+    let name = args.slice(1).join(" ");
 
     if (command.methods.includes(args[0])) {
       let method = args[0];
-      args.shift();
-      require(`../../functions/squad/${method}`)(client, message, args);
+      require(`../../functions/squad/${method}`)(client, message, name);
+    } else if (["panel", "infos", "info"].includes(args[0])) {
+      require(`../../functions/panels/panelSquad.js`)(message, name);
     } else {
-      return message.channel.send(embeds.unknownCommand());
+      return message.channel.send(
+        embeds.error("`❌` Désolé, la commande n'existe pas")
+      );
     }
   },
 };

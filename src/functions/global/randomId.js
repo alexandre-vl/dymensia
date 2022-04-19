@@ -21,9 +21,15 @@ const randomId = (nbrId, tableSearch) => {
   ];
   let id = "";
   for (let i = 0; i < nbrId; i++) {
-    id += characters[Math.round(Math.random() * characters.length)];
+    id += characters[Math.round(Math.random() * (characters.length - 1))];
   }
-  
+  if (tableSearch == "roles") {
+    if (!db.get("squads").find((e) => e.roles.find((r) => r.id == id))) {
+      return id;
+    } else {
+      return randomId(nbrId, tableSearch);
+    }
+  }
   if (!db.get(tableSearch).find((e) => e.id === id)) {
     return id;
   } else {

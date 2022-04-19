@@ -1,5 +1,5 @@
 const embeds = require("../../functions/global/embeds.js");
-const us
+
 const db = require('quick.db')
 
 module.exports = {
